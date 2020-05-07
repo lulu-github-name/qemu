@@ -746,6 +746,12 @@ static int vhost_virtqueue_set_addr(struct vhost_dev *dev,
         .log_guest_addr = vq->used_phys,
         .flags = enable_log ? (1 << VHOST_VRING_F_LOG) : 0,
     };
+    /*vDPA need to use the phys address here to set to hardware*/
+    if (dev->vhost_ops->backend_type == VHOST_BACKEND_TYPE_VDPA) {
+        addr.desc_user_addr = (uint64_t)(unsigned long)vq->desc_phys;
+        addr.avail_user_addr = (uint64_t)(unsigned long)vq->avail_phys;
+        addr.used_user_addr = (uint64_t)(unsigned long)vq->used_phys;
+    }
     int r = dev->vhost_ops->vhost_set_vring_addr(dev, &addr);
     if (r < 0) {
         VHOST_OPS_DEBUG("vhost_set_vring_addr failed");
@@ -1493,6 +1499,14 @@ int vhost_dev_set_config(struct vhost_dev *hdev, const uint8_t *data,
     return -1;
 }
 
+int vhost_dev_get_device_id(struct vhost_dev *hdev, uint32_t *device_id)
+{
+    assert(hdev->vhost_ops);
+    if (hdev->vhost_ops->vhost_get_device_id) {
+        return hdev->vhost_ops->vhost_get_device_id(hdev, device_id);
+    }
+    return -1;
+}
 void vhost_dev_set_config_notifier(struct vhost_dev *hdev,
                                    const VhostDevConfigOps *ops)
 {
