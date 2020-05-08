@@ -2292,6 +2292,10 @@ DEF("netdev", HAS_ARG, QEMU_OPTION_netdev,
     "-netdev vhost-user,id=str,chardev=dev[,vhostforce=on|off]\n"
     "                configure a vhost-user network, backed by a chardev 'dev'\n"
 #endif
+#ifdef CONFIG_POSIX
+    "-netdev vhost-vdpa,id=str,vhostdev=/path/to/dev\n"
+    "                configure a vhost-vdpa network, backed by a vhostdev 'dev'\n"
+#endif
     "-netdev hubport,id=str,hubid=n[,netdev=nd]\n"
     "                configure a hub port on the hub with ID 'n'\n", QEMU_ARCH_ALL)
 DEF("nic", HAS_ARG, QEMU_OPTION_nic,
@@ -2310,6 +2314,9 @@ DEF("nic", HAS_ARG, QEMU_OPTION_nic,
 #endif
 #ifdef CONFIG_POSIX
     "vhost-user|"
+#endif
+#ifdef CONFIG_POSIX
+    "vhost-vdpa|"
 #endif
     "socket][,option][,...][mac=macaddr]\n"
     "                initialize an on-board / default host NIC (using MAC address\n"
@@ -2749,6 +2756,18 @@ qemu -m 512 -object memory-backend-file,id=mem,size=512M,mem-path=/hugetlbfs,sha
      -device virtio-net-pci,netdev=net0
 @end example
 
+@item -netdev vhost-vdpa,vhostdev=/path/to/dev
+Establish a vhost-vdpa netdev, backed by a vhostdev. The chardev should
+be a unix domain socket backed one. The vhost-vdpa uses a specifically defined
+protocol to pass vhost ioctl replacement messages to an application on the other
+end of the socket.
+Example:
+@example
+qemu -m 512 -object memory-backend-file,id=mem,size=512M,mem-path=/hugetlbfs,share=on \
+     -numa node,memdev=mem \
+     -netdev type=vhost-vdpa,id=net0,vhostdev=/path/to/dev \
+     -device virtio-net-pci,netdev=net0
+@end example
 @item -netdev hubport,id=@var{id},hubid=@var{hubid}[,netdev=@var{nd}]
 
 Create a hub port on the emulated hub with ID @var{hubid}.
