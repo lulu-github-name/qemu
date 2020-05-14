@@ -205,6 +205,19 @@ static int vhost_vdpa_call(struct vhost_dev *dev, unsigned long int request,
     return ioctl(fd, request, arg);
 }
 
+static void vhost_vdpa_add_status(struct vhost_dev *dev, uint8_t status)
+{
+    uint8_t s;
+
+    if (vhost_vdpa_call(dev, VHOST_VDPA_GET_STATUS, &s)) {
+        return;
+    }
+
+    s |= status;
+
+    vhost_vdpa_call(dev, VHOST_VDPA_SET_STATUS, &s);
+}
+
 static int vhost_vdpa_get_backend_features(struct vhost_dev *dev,
                                    uint64_t *features)
 {
@@ -224,6 +237,9 @@ static int vhost_vdpa_init(struct vhost_dev *dev, void *opaque)
 
     v->listener = vhost_vdpa_memory_listener;
     memory_listener_register(&v->listener, &address_space_memory);
+
+    vhost_vdpa_add_status(dev, VIRTIO_CONFIG_S_ACKNOWLEDGE |
+                               VIRTIO_CONFIG_S_DRIVER);
 
     ret = vhost_vdpa_get_backend_features(dev, &backend_features);
    /*
@@ -318,7 +334,16 @@ static int vhost_vdpa_set_vring_call(struct vhost_dev *dev,
 static int vhost_vdpa_set_features(struct vhost_dev *dev,
                                    uint64_t features)
 {
-    return vhost_vdpa_call(dev, VHOST_SET_FEATURES, &features);
+    int ret = vhost_vdpa_call(dev, VHOST_SET_FEATURES, &features);
+    uint8_t status = 0;
+
+    if (ret)
+        return ret;
+
+    vhost_vdpa_add_status(dev, VIRTIO_CONFIG_S_FEATURES_OK);
+    vhost_vdpa_call(dev, VHOST_VDPA_GET_STATUS, &status);
+
+    return !(status & VIRTIO_CONFIG_S_FEATURES_OK);
 }
 
 static int vhost_vdpa_get_features(struct vhost_dev *dev,
