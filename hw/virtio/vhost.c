@@ -1662,6 +1662,11 @@ int vhost_dev_start(struct vhost_dev *hdev, VirtIODevice *vdev)
         }
     }
 
+    r = vhost_set_state(hdev, true);
+    if (r) {
+        goto fail_log;
+    }
+
     if (vhost_dev_has_iommu(hdev)) {
         hdev->vhost_ops->vhost_set_iotlb_callback(hdev, true);
 
@@ -1698,6 +1703,8 @@ void vhost_dev_stop(struct vhost_dev *hdev, VirtIODevice *vdev)
     /* should only be called after backend is connected */
     assert(hdev->vhost_ops);
 
+    vhost_set_state(hdev, false);
+
     for (i = 0; i < hdev->nvqs; ++i) {
         vhost_virtqueue_stop(hdev,
                              vdev,
@@ -1722,4 +1729,13 @@ int vhost_net_set_backend(struct vhost_dev *hdev,
     }
 
     return -1;
+}
+
+int vhost_set_state(struct vhost_dev *hdev, bool started)
+{
+    if (hdev->vhost_ops->vhost_set_state) {
+        return hdev->vhost_ops->vhost_set_state(hdev, started);
+    }
+
+    return 0;
 }

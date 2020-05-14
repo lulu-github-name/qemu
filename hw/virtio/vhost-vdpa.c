@@ -435,11 +435,23 @@ static int  vhost_vdpa_set_config(struct vhost_dev *dev, const uint8_t *data,
     g_free(v_config);
     return ret;
  }
-static int vhost_vdpa_set_state(struct vhost_dev *dev, uint8_t state)
-{
-    return vhost_vdpa_call(dev, VHOST_VDPA_SET_STATUS, &state);
-}
 
+static int vhost_vdpa_set_state(struct vhost_dev *dev, bool started)
+{
+    if (started) {
+        uint8_t status = 0;
+
+        vhost_vdpa_add_status(dev, VIRTIO_CONFIG_S_DRIVER_OK);
+        vhost_vdpa_call(dev, VHOST_VDPA_GET_STATUS, &status);
+
+        return !(status & VIRTIO_CONFIG_S_DRIVER_OK);
+    } else {
+        vhost_vdpa_reset_device(dev);
+        vhost_vdpa_add_status(dev, VIRTIO_CONFIG_S_ACKNOWLEDGE |
+                                   VIRTIO_CONFIG_S_DRIVER);
+        return 0;
+    }
+}
 
 const VhostOps vdpa_ops = {
         .backend_type = VHOST_BACKEND_TYPE_VDPA,

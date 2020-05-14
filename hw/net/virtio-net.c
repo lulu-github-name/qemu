@@ -206,9 +206,6 @@ static void virtio_net_vhost_status(VirtIONet *n, uint8_t status)
     VirtIODevice *vdev = VIRTIO_DEVICE(n);
     NetClientState *nc = qemu_get_queue(n->nic);
     int queues = n->multiqueue ? n->max_queues : 1;
-    NetClientState *peer = qemu_get_peer(nc, 0);
-    uint8_t status_set  = vdev->status ;
-    uint8_t vhost_started_pre = n->vhost_started;
 
     if (!get_vhost_net(nc->peer)) {
         return;
@@ -248,7 +245,6 @@ static void virtio_net_vhost_status(VirtIONet *n, uint8_t status)
                 return;
             }
         }
-        status_set = status_set | VIRTIO_CONFIG_S_DRIVER_OK;
 
         n->vhost_started = 1;
         r = vhost_net_start(vdev, n->nic->ncs, queues);
@@ -256,15 +252,10 @@ static void virtio_net_vhost_status(VirtIONet *n, uint8_t status)
             error_report("unable to start vhost net: %d: "
                          "falling back on userspace virtio", -r);
             n->vhost_started = 0;
-            status_set = status_set & ~VIRTIO_CONFIG_S_DRIVER_OK;
         }
     } else {
         vhost_net_stop(vdev, n->nic->ncs, queues);
-        status_set = status_set & ~VIRTIO_CONFIG_S_DRIVER_OK;
         n->vhost_started = 0;
-    }
-    if (vhost_started_pre != n->vhost_started) {
-            vhost_set_state(peer, status_set);
     }
 }
 

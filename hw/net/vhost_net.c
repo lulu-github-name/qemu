@@ -515,12 +515,5 @@ int vhost_net_set_mtu(struct vhost_net *net, uint16_t mtu)
 
     return vhost_ops->vhost_net_set_mtu(&net->dev, mtu);
 }
-int vhost_set_state(NetClientState *nc, uint8_t state)
-{
-    struct vhost_net *net = get_vhost_net(nc);
-    struct vhost_dev *hdev = &net->dev;
-        if (hdev->vhost_ops->vhost_set_state) {
-                return hdev->vhost_ops->vhost_set_state(hdev, state);
-        }
-    return 0;
-}
+
+
