@@ -340,7 +340,9 @@ static int vhost_vdpa_set_owner(struct vhost_dev *dev)
 
 static int vhost_vdpa_reset_device(struct vhost_dev *dev)
 {
-    return vhost_vdpa_call(dev, VHOST_RESET_OWNER, NULL);
+    uint8_t status = 0;
+
+    return vhost_vdpa_call(dev, VHOST_VDPA_SET_STATUS, &status);
 }
 
 static int vhost_vdpa_get_vq_index(struct vhost_dev *dev, int idx)
