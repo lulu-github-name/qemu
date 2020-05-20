@@ -2247,8 +2247,8 @@ if test "$vhost_user" = "yes" && test "$mingw32" = "yes"; then
   error_exit "vhost-user isn't available on win32"
 fi
 test "$vhost_vdpa" = "" && vhost_vdpa=yes
-if test "$vhost_vdpa" = "yes" && test "$mingw32" = "yes"; then
-  error_exit "vhost-vdpa isn't available on win32"
+if test "$vhost_vdpa" = "yes" && test "$linux" != "yes"; then
+  error_exit "vhost-vdpa is only available on Linux"
 fi
 test "$vhost_kernel" = "" && vhost_kernel=$linux
 if test "$vhost_kernel" = "yes" && test "$linux" != "yes"; then
